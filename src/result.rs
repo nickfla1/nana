@@ -87,9 +87,3 @@ impl From<validator::ValidationErrors> for NanaError {
         Self::Package(PackageError::Invalid(e))
     }
 }
-
-impl From<ctrlc::Error> for NanaError {
-    fn from(e: ctrlc::Error) -> Self {
-        Self::Runtime(e.to_string())
-    }
-}
