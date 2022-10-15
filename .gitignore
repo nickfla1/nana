@@ -1,0 +1,6 @@
+# Build artifacts
+/target
+
+# Run artifacts
+tests/.nana
+tests/node_modules

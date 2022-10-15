@@ -1,0 +1,38 @@
+[package]
+name = "nana"
+version = "0.1.0"
+edition = "2021"
+authors = ["Flavio (nickfla1) Lanternini Strippoli"]
+readme = "README.md"
+description = "A fast and customizable Node.js package manager"
+keywords = ["node", "package-manager", "package", "javascript"]
+categories = ["command-line-interface", "web-programming"]
+exclude = ["/tests"]
+license-file = "LICENSE"
+homepage = "https://github.com/nickfla1/nana"
+repository = "https://github.com/nickfla1/nana"
+
+[[bin]]
+name = "nana"
+
+[dependencies]
+anyhow = "1.0.65"
+async-recursion = "1.0.0"
+bytes = "1.2.1"
+clap = "4.0.15"
+console = "0.15.2"
+ctrlc = { version = "3.2.3", features = ["termination"]}
+flate2 = "1.0.24"
+futures = "0.3.24"
+futures-util = "0.3.24"
+http-cache-reqwest = { version = "0.5.0", features = ["manager-cacache"] }
+indexmap = "1.9.1"
+indicatif = "0.17.1"
+package_json_schema = { version = "0.1.2", features = ["validate"] }
+reqwest = { version = "0.11", features = ["json", "stream"] }
+reqwest-middleware = "0.1.6"
+semver_rs = { version = "0.2.0", features = ["serde"] }
+serde = "1.0.145"
+tar = "0.4.38"
+tokio = { version = "1.21.2", features = ["full"] }
+validator = "0.16.0"
