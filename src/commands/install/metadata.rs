@@ -1,10 +1,13 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 use async_recursion::async_recursion;
 use indexmap::IndexMap;
 use package_json_schema::PackageJson;
 use semver_rs::{Range, Version};
-use tokio::sync::Mutex;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     package::metadata::{Dependencies, Metadata, MetadataVersion},
@@ -16,7 +19,7 @@ use super::fetcher;
 
 type DependencyTree = HashMap<String, Dependency>;
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Dependency {
     pub versions: HashMap<String, MetadataVersion>,
     pub parents: Vec<String>,
@@ -39,7 +42,7 @@ pub async fn load_dependencies_metadata<'a>(
         .await;
     }
 
-    pb.lock_owned().await.progress_done();
+    pb.lock()?.progress_done();
 
     Ok(dependency_tree.clone())
 }
@@ -88,7 +91,7 @@ async fn fetch_dependencies_metadata(
     dependency_tree: Arc<Mutex<DependencyTree>>,
     pb: Arc<Mutex<Box<dyn ProgressHandler>>>,
 ) -> NanaResult<(Option<String>, Option<IndexMap<String, String>>)> {
-    if let Some(dep) = dependency_tree.lock().await.get_mut(name) {
+    if let Some(dep) = dependency_tree.lock()?.get_mut(name) {
         let range = Range::new(version).parse()?;
 
         for version in dep.versions.keys() {
@@ -104,7 +107,7 @@ async fn fetch_dependencies_metadata(
     let mut version_list = parse_metadata(metadata, version)?;
     let meta_version = find_best_matching_version(&mut version_list);
 
-    let mut tree_lock = dependency_tree.lock().await;
+    let mut tree_lock = dependency_tree.lock()?;
     if let Some(dep) = tree_lock.get_mut(name) {
         dep.versions
             .insert(meta_version.version.clone(), meta_version.clone());
@@ -113,7 +116,7 @@ async fn fetch_dependencies_metadata(
             name.clone(),
             Dependency {
                 versions: HashMap::from([(meta_version.version.clone(), meta_version.clone())]),
-                parents: vec![],
+                parents: vec![parent.into()],
             },
         );
     }
