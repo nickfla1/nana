@@ -1,13 +1,13 @@
 use std::{collections::HashMap, sync::Arc};
 
 use async_recursion::async_recursion;
-use indicatif::ProgressBar;
 use package_json_schema::PackageJson;
 use semver_rs::{Range, Version};
 use tokio::sync::Mutex;
 
 use crate::{
     package::metadata::{Dependencies, Metadata, MetadataVersion},
+    progress::ProgressHandler,
     result::NanaResult,
 };
 
@@ -15,20 +15,19 @@ use super::fetcher;
 
 type ParsedMetadata = HashMap<String, MetadataVersion>;
 
-pub async fn load_dependencies_metadata(package: &PackageJson) -> NanaResult<ParsedMetadata> {
+pub async fn load_dependencies_metadata<'a>(
+    package: &PackageJson,
+    progress_handler: Box<dyn ProgressHandler>,
+) -> NanaResult<ParsedMetadata> {
     let mut metadata = ParsedMetadata::new();
 
-    let pb = ProgressBar::new(0);
-    // pb.set_style(ProgressStyle::default_bar().template("{msg}\n{spinner:.green} [{elapsed_precise} [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})")?.progress_chars("#>-"));
-    pb.set_message("Downloading metadata");
-
-    let pb = Arc::new(Mutex::new(pb));
+    let pb = Arc::new(Mutex::new(progress_handler));
 
     if let Some(dependencies) = &package.dependencies {
         do_load_dependencies_metadata(dependencies, &mut metadata, pb.clone()).await;
     }
 
-    pb.lock_owned().await.finish_and_clear();
+    pb.lock_owned().await.progress_done();
 
     Ok(metadata)
 }
@@ -37,7 +36,7 @@ pub async fn load_dependencies_metadata(package: &PackageJson) -> NanaResult<Par
 async fn do_load_dependencies_metadata(
     dependencies: &Dependencies,
     metadata: &mut ParsedMetadata,
-    pb: Arc<Mutex<ProgressBar>>,
+    pb: Arc<Mutex<Box<dyn ProgressHandler>>>,
 ) {
     let mut tasks = vec![];
 
@@ -69,7 +68,7 @@ async fn do_load_dependencies_metadata(
 async fn fetch_dependencies_metadata(
     name: &String,
     version: &str,
-    pb: Arc<Mutex<ProgressBar>>,
+    pb: Arc<Mutex<Box<dyn ProgressHandler>>>,
 ) -> NanaResult<Vec<MetadataVersion>> {
     let metadata = fetcher::fetch_metadata(name, Some(pb.clone())).await?;
     let version_list = parse_metadata(metadata, version)?;

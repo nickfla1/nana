@@ -1,12 +1,11 @@
 use std::sync::Arc;
 
 use http_cache_reqwest::{CACacheManager, Cache, CacheMode, HttpCache};
-use indicatif::ProgressBar;
 use reqwest::Client;
 use reqwest_middleware::ClientBuilder;
 use tokio::sync::Mutex;
 
-use crate::{package::metadata::Metadata, result::NanaResult};
+use crate::{package::metadata::Metadata, progress::ProgressHandler, result::NanaResult};
 
 const CACHE_DIR: &str = ".nana/cache/http";
 const REGISTRY_URL: &str = "https://registry.npmjs.org/";
@@ -16,7 +15,7 @@ const HEADER_ACCEPT: &str =
 
 pub async fn fetch_metadata(
     name: &String,
-    pb: Option<Arc<Mutex<ProgressBar>>>,
+    pb: Option<Arc<Mutex<Box<dyn ProgressHandler>>>>,
 ) -> NanaResult<Metadata> {
     let client = ClientBuilder::new(Client::new())
         .with(Cache(HttpCache {
@@ -29,7 +28,7 @@ pub async fn fetch_metadata(
         .build();
 
     if let Some(pb) = &pb {
-        pb.lock().await.inc_length(1);
+        pb.lock().await.progress_increment_length(1);
     }
 
     let result = client
@@ -41,7 +40,7 @@ pub async fn fetch_metadata(
         .await?;
 
     if let Some(pb) = &pb {
-        pb.lock().await.inc(1);
+        pb.lock().await.progress_increment(1);
     }
 
     Ok(result)
