@@ -7,20 +7,18 @@ use std::io::Cursor;
 use bytes::BytesMut;
 use flate2::read::GzDecoder;
 use futures::StreamExt;
-use indicatif::{ProgressBar, ProgressStyle};
 use tar::Archive;
 use tokio::sync::Mutex;
 
-use crate::{package::metadata::MetadataVersion, result::NanaResult};
+use crate::{package::metadata::MetadataVersion, progress::ProgressHandler, result::NanaResult};
 
-pub async fn dowload_metadata_list(list: &HashMap<String, MetadataVersion>) -> NanaResult<()> {
+pub async fn dowload_metadata_list(
+    list: &HashMap<String, MetadataVersion>,
+    progress_handler: Box<dyn ProgressHandler>,
+) -> NanaResult<()> {
     let mut tasks = vec![];
 
-    let pb = ProgressBar::new(0);
-    pb.set_style(ProgressStyle::default_bar().template("{msg}\n{spinner:.green} [{elapsed_precise} [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})")?.progress_chars("#>-"));
-    pb.set_message("Downloading dependencies");
-
-    let pb = Arc::new(Mutex::new(pb));
+    let pb = Arc::new(Mutex::new(progress_handler));
 
     for meta_version in list.values() {
         let pb = pb.clone();
@@ -31,27 +29,27 @@ pub async fn dowload_metadata_list(list: &HashMap<String, MetadataVersion>) -> N
         res?
     }
 
-    pb.lock_owned().await.finish_and_clear();
+    pb.lock_owned().await.progress_done();
 
     Ok(())
 }
 
 async fn download_dist(
     meta_version: &MetadataVersion,
-    pb: Arc<Mutex<ProgressBar>>,
+    pb: Arc<Mutex<Box<dyn ProgressHandler>>>,
 ) -> NanaResult<()> {
     let res = reqwest::get(&meta_version.dist.tarball).await?;
     let file_size = res.content_length().unwrap();
 
     let mut stream = res.bytes_stream();
 
-    pb.lock().await.inc_length(file_size);
+    pb.lock().await.progress_increment_length(file_size);
 
     let mut bytes = BytesMut::new();
     while let Some(item) = stream.next().await {
         let chunk = item?;
         bytes.extend_from_slice(&chunk);
-        pb.lock().await.inc(chunk.len() as u64);
+        pb.lock().await.progress_increment(chunk.len() as u64);
     }
 
     let mut content = Cursor::new(bytes);
