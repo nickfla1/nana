@@ -19,9 +19,16 @@ pub async fn exec() -> NanaResult<()> {
         );
     }
 
-    let metadata_list = {
+    let dependency_tree = {
         let pb = ProgressBar::new(0);
         pb.set_message("Downloading metadata");
+        pb.set_style(
+            ProgressStyle::default_bar()
+                .template(
+                    "{msg}\n{spinner:.green} [{elapsed_precise}] [{bar:.green/darkgreen}] {pos}/{len}",
+                )?
+                .progress_chars("█░"),
+        );
 
         load_dependencies_metadata(&package, Box::new(pb)).await?
     };
@@ -29,9 +36,15 @@ pub async fn exec() -> NanaResult<()> {
     {
         let pb = ProgressBar::new(0);
         pb.set_message("Downloading dependencies");
-        pb.set_style(ProgressStyle::default_bar().template("{msg}\n{spinner:.green} [{elapsed_precise} [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})")?.progress_chars("#>-"));
+        pb.set_style(
+            ProgressStyle::default_bar()
+                .template(
+                    "{msg}\n{spinner:.green} [{elapsed_precise}] [{bar:.green/darkgreen}] {bytes}/{total_bytes} ({bytes_per_sec} - {eta})",
+                )?
+                .progress_chars("█░"),
+        );
 
-        dowload_metadata_list(&metadata_list, Box::new(pb)).await?;
+        dowload_metadata_list(dependency_tree.clone(), Box::new(pb)).await?;
     }
 
     println!("{}", style("Done.").green());

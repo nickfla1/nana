@@ -12,17 +12,22 @@ use tokio::sync::Mutex;
 
 use crate::{package::metadata::MetadataVersion, progress::ProgressHandler, result::NanaResult};
 
+use super::metadata::Dependency;
+
 pub async fn dowload_metadata_list(
-    list: &HashMap<String, MetadataVersion>,
+    dependency_tree: Arc<Mutex<HashMap<String, Dependency>>>,
     progress_handler: Box<dyn ProgressHandler>,
 ) -> NanaResult<()> {
     let mut tasks = vec![];
 
     let pb = Arc::new(Mutex::new(progress_handler));
 
-    for meta_version in list.values() {
-        let pb = pb.clone();
-        tasks.push(async move { download_dist(meta_version, pb).await });
+    for dependency in dependency_tree.lock().await.values() {
+        for version in dependency.versions.values() {
+            let pb = pb.clone();
+            let version = version.clone();
+            tasks.push(async move { download_dist(&version, pb).await });
+        }
     }
 
     for res in futures::future::join_all(tasks).await {
@@ -59,7 +64,13 @@ async fn download_dist(
 
     for mut entry in archive.entries()?.filter_map(|e| e.ok()) {
         let package_path: PathBuf = format!("node_modules/{}/", meta_version.name).into();
-        let file_path = entry.path()?.strip_prefix("package")?.to_owned();
+        let entry_path = entry.path()?;
+        let file_path: PathBuf = if entry_path.starts_with("package") {
+            entry_path.strip_prefix("package")?.to_owned()
+        } else {
+            entry_path.into()
+        };
+
         let path = package_path.join(file_path);
         std::fs::create_dir_all(path.parent().unwrap())?;
         entry.unpack(&path)?;

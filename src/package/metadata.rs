@@ -24,12 +24,6 @@ pub struct MetadataVersion {
     pub dependencies: Option<Dependencies>,
 }
 
-impl MetadataVersion {
-    pub fn get_key(&self) -> String {
-        format!("{}@{}", self.name, self.version)
-    }
-}
-
 #[derive(Deserialize, Debug)]
 pub struct Metadata {
     pub name: String,
