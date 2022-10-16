@@ -1,4 +1,4 @@
-> **Warning**: Nana is still a Work In Progress and its usage in production environment it highly discouraged.
+> **Warning**: Nana is still a Work In Progress and its usage in production environments is highly discouraged.
 
 ## Nana
 Fast and customizable Node.js package manager written in Rust!
