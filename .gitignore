@@ -4,3 +4,4 @@
 # Run artifacts
 tests/.nana
 tests/node_modules
+tests/nana.lock.yml

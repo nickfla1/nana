@@ -15,14 +15,14 @@ use crate::{package::metadata::MetadataVersion, progress::ProgressHandler, resul
 use super::metadata::Dependency;
 
 pub async fn dowload_metadata_list(
-    dependency_tree: Arc<Mutex<HashMap<String, Dependency>>>,
+    dependency_tree: Arc<std::sync::Mutex<HashMap<String, Dependency>>>,
     progress_handler: Box<dyn ProgressHandler>,
 ) -> NanaResult<()> {
     let mut tasks = vec![];
 
     let pb = Arc::new(Mutex::new(progress_handler));
 
-    for dependency in dependency_tree.lock().await.values() {
+    for dependency in dependency_tree.lock()?.values() {
         for version in dependency.versions.values() {
             let pb = pb.clone();
             let version = version.clone();

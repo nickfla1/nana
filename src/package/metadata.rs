@@ -1,22 +1,20 @@
 use std::collections::HashMap;
 
 use indexmap::IndexMap;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 pub type Dependencies = IndexMap<String, String>;
 
 // source: https://github.com/npm/registry/blob/master/docs/responses/package-metadata.md#dist
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Dist {
     pub tarball: String,
     pub shasum: Option<String>,
     pub integrity: Option<String>,
-    #[serde(rename(deserialize = "npm-signature"))]
-    pub npm_signature: Option<String>,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MetadataVersion {
     pub name: String,
     pub version: String,

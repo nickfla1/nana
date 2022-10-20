@@ -87,3 +87,15 @@ impl From<validator::ValidationErrors> for NanaError {
         Self::Package(PackageError::Invalid(e))
     }
 }
+
+impl<T> From<std::sync::PoisonError<T>> for NanaError {
+    fn from(e: std::sync::PoisonError<T>) -> Self {
+        Self::Runtime(e.to_string())
+    }
+}
+
+impl From<serde_yaml::Error> for NanaError {
+    fn from(e: serde_yaml::Error) -> Self {
+        Self::Runtime(e.to_string())
+    }
+}

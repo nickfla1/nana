@@ -1,9 +1,8 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use http_cache_reqwest::{CACacheManager, Cache, CacheMode, HttpCache};
 use reqwest::Client;
 use reqwest_middleware::ClientBuilder;
-use tokio::sync::Mutex;
 
 use crate::{package::metadata::Metadata, progress::ProgressHandler, result::NanaResult};
 
@@ -28,7 +27,7 @@ pub async fn fetch_metadata(
         .build();
 
     if let Some(pb) = &pb {
-        pb.lock().await.progress_increment_length(1);
+        pb.lock()?.progress_increment_length(1);
     }
 
     let result = client
@@ -40,7 +39,7 @@ pub async fn fetch_metadata(
         .await?;
 
     if let Some(pb) = &pb {
-        pb.lock().await.progress_increment(1);
+        pb.lock()?.progress_increment(1);
     }
 
     Ok(result)

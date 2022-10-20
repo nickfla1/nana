@@ -30,7 +30,8 @@ package_json_schema = { version = "0.1.2", features = ["validate"] }
 reqwest = { version = "0.11", features = ["json", "stream"] }
 reqwest-middleware = "0.1.6"
 semver_rs = { version = "0.2.0", features = ["serde"] }
-serde = "1.0.145"
+serde = { version = "1.0.145", features = ["rc"] }
+serde_yaml = "0.9.13"
 tar = "0.4.38"
 tokio = { version = "1.21.2", features = ["full"] }
 validator = "0.16.0"
