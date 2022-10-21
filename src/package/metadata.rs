@@ -28,3 +28,9 @@ pub struct Metadata {
     pub modified: String,
     pub versions: HashMap<String, MetadataVersion>,
 }
+
+impl MetadataVersion {
+    pub fn key(&self) -> String {
+        format!("{}@{}", self.name, self.version)
+    }
+}

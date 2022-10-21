@@ -1,9 +1,8 @@
-use crate::{commands::install::exec as exec_install, result::NanaResult};
+use crate::{commands::install::Install, result::NanaResult};
 use clap::ArgMatches;
 
 #[tokio::main]
 pub async fn exec(_arg_matches: &ArgMatches) -> NanaResult<()> {
-    exec_install().await?;
-
-    Ok(())
+    let mut cmd = Install::new();
+    cmd.run().await
 }
