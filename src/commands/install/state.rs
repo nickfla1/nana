@@ -5,10 +5,6 @@ use std::{
 
 use crate::package::metadata::MetadataVersion;
 
-pub struct StateGuard {
-    state: State,
-}
-
 #[derive(Debug, Clone)]
 pub struct State {
     pub shared: Arc<Mutex<SharedState>>,
@@ -18,18 +14,6 @@ pub struct State {
 pub struct SharedState {
     pub dependencies: HashMap<String, MetadataVersion>,
     pub dependencies_in_progress: HashSet<String>,
-}
-
-impl StateGuard {
-    pub fn new() -> Self {
-        Self {
-            state: State::new(),
-        }
-    }
-
-    pub fn state(&self) -> State {
-        self.state.clone()
-    }
 }
 
 impl State {

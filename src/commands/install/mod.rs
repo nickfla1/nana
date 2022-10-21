@@ -10,7 +10,7 @@ use crate::{
     result::NanaResult,
 };
 
-use self::{lock::Lock, modules::NodeModules, state::StateGuard};
+use self::{lock::Lock, modules::NodeModules, state::State};
 
 #[derive(Debug)]
 pub enum InstallCommand {
@@ -20,14 +20,18 @@ pub enum InstallCommand {
 }
 
 pub struct Install {
-    state: StateGuard,
+    state: State,
 }
 
 impl Install {
     pub fn new() -> Self {
         Self {
-            state: StateGuard::new(),
+            state: State::new(),
         }
+    }
+
+    fn state(&self) -> State {
+        self.state.clone()
     }
 }
 
@@ -84,7 +88,7 @@ impl Install {
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<InstallCommand>();
 
         let handler_tx = tx.clone();
-        let state = self.state.state();
+        let state = self.state();
         let handler = tokio::spawn(async move {
             while let Some(cmd) = rx.recv().await {
                 let tx = handler_tx.clone();
@@ -153,7 +157,6 @@ impl Install {
         handler.await?;
 
         Ok(self
-            .state
             .state()
             .shared
             .lock()?
