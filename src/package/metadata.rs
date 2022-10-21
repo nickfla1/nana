@@ -28,3 +28,19 @@ pub struct Metadata {
     pub modified: String,
     pub versions: HashMap<String, MetadataVersion>,
 }
+
+impl MetadataVersion {
+    pub fn dependencies(&self) -> Vec<(String, String)> {
+        match &self.dependencies {
+            Some(dependencies) => dependencies
+                .iter()
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect(),
+            None => vec![],
+        }
+    }
+
+    pub fn key(&self) -> String {
+        format!("{}@{}", self.name, self.version)
+    }
+}

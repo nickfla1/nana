@@ -1,20 +1,28 @@
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
+
+use crate::commands::install::InstallCommand;
 
 pub type NanaResult<T> = Result<T, NanaError>;
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 pub enum NanaError {
     IO(String),
+    Lock(LockError),
     Network(String),
-    Runtime(String),
     Package(PackageError),
+    Runtime(String),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 pub enum PackageError {
+    Invalid(validator::ValidationErrors),
     NotFound,
     ScriptNotFound(String),
-    Invalid(validator::ValidationErrors),
+}
+
+#[derive(Debug, Clone)]
+pub enum LockError {
+    NotFound,
 }
 
 impl std::error::Error for NanaError {}
@@ -25,7 +33,8 @@ impl Display for NanaError {
             Self::IO(msg) => write!(f, "IO error: {}", msg),
             Self::Network(msg) => write!(f, "Network error: {}", msg),
             Self::Runtime(msg) => write!(f, "Runtime error: {}", msg),
-            Self::Package(internal) => internal.fmt(f),
+            Self::Package(error) => std::fmt::Display::fmt(&error, f),
+            Self::Lock(error) => std::fmt::Display::fmt(&error, f),
         }
     }
 }
@@ -36,6 +45,14 @@ impl Display for PackageError {
             Self::NotFound => write!(f, "Package not found"),
             Self::ScriptNotFound(name) => write!(f, "Could not find script '{}' in package", name),
             Self::Invalid(e) => write!(f, "Package is in an invalid format. Errors: {}", e),
+        }
+    }
+}
+
+impl Display for LockError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NotFound => write!(f, "Lock file  not found"),
         }
     }
 }
@@ -96,6 +113,24 @@ impl<T> From<std::sync::PoisonError<T>> for NanaError {
 
 impl From<serde_yaml::Error> for NanaError {
     fn from(e: serde_yaml::Error) -> Self {
+        Self::Runtime(e.to_string())
+    }
+}
+
+impl From<std::str::Utf8Error> for NanaError {
+    fn from(e: std::str::Utf8Error) -> Self {
+        Self::Runtime(e.to_string())
+    }
+}
+
+impl From<tokio::task::JoinError> for NanaError {
+    fn from(e: tokio::task::JoinError) -> Self {
+        Self::Runtime(e.to_string())
+    }
+}
+
+impl From<tokio::sync::mpsc::error::SendError<InstallCommand>> for NanaError {
+    fn from(e: tokio::sync::mpsc::error::SendError<InstallCommand>) -> Self {
         Self::Runtime(e.to_string())
     }
 }

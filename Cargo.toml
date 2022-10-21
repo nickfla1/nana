@@ -27,11 +27,13 @@ http-cache-reqwest = { version = "0.5.0", features = ["manager-cacache"] }
 indexmap = "1.9.1"
 indicatif = "0.17.1"
 package_json_schema = { version = "0.1.2", features = ["validate"] }
+rayon = "1.5.3"
 reqwest = { version = "0.11", features = ["json", "stream"] }
 reqwest-middleware = "0.1.6"
 semver_rs = { version = "0.2.0", features = ["serde"] }
 serde = { version = "1.0.145", features = ["rc"] }
 serde_yaml = "0.9.13"
+sha1 = "0.10.5"
 tar = "0.4.38"
 tokio = { version = "1.21.2", features = ["full"] }
 validator = "0.16.0"
