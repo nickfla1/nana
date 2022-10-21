@@ -3,7 +3,6 @@ use std::path::Path;
 use indexmap::IndexMap;
 use semver_rs::{Range, Version};
 use serde::{Deserialize, Serialize};
-use sha1::{Digest, Sha1};
 
 use crate::{
     package::{metadata::MetadataVersion, Package},

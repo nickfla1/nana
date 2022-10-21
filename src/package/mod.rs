@@ -3,7 +3,6 @@ pub mod metadata;
 use std::path::Path;
 
 use package_json_schema::PackageJson;
-use sha1::{Digest, Sha1};
 use validator::Validate;
 
 use crate::result::{NanaError, NanaResult, PackageError};
@@ -54,32 +53,6 @@ impl Package {
             Some(dependencies) => !dependencies.is_empty(),
             None => false,
         }
-    }
-
-    pub fn calculate_integrity(&mut self) -> String {
-        if self.package.dependencies.is_none() {
-            return "0".into();
-        }
-
-        let mut data = String::new();
-
-        if let Some(dependencies) = &mut self.package.dependencies {
-            let mut tmp = dependencies
-                .iter()
-                .map(|(k, v)| format!("{}@{}", k, v))
-                .collect::<Vec<String>>();
-            tmp.sort();
-
-            println!("PKG {:?}", tmp);
-
-            let key = tmp.join("");
-            data.push_str(&key);
-        }
-
-        let mut hasher = Sha1::new();
-        hasher.update(data);
-
-        format!("{:x}", hasher.finalize())
     }
 }
 
