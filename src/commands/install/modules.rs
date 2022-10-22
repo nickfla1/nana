@@ -33,8 +33,6 @@ impl NodeModules {
             .map(|v| &v.name)
             .collect::<Vec<&String>>();
 
-        println!("{} :: {}", self.modules.len(), names.len());
-
         if self.modules.len() < names.len() {
             return false;
         }

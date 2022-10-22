@@ -4,6 +4,8 @@ mod lock;
 mod modules;
 mod state;
 
+use console::style;
+
 use crate::{
     commands::install::fetch::fetch_metadata,
     package::{metadata::MetadataVersion, Package},
@@ -39,7 +41,7 @@ impl Install {
     pub async fn run(&mut self) -> NanaResult<()> {
         // 1.   Check if `package.json` is present
         // 2.   Load and validate `package.json`
-        let mut package = Package::from_local_package()?;
+        let package = Package::from_local_package()?;
 
         // 3.   Check if `nana.lock.yml` is present
         // 3.1  Load `nana.lock.yml`
@@ -50,22 +52,17 @@ impl Install {
 
         // 3.2  Calculate `package.json` integrity
         // 3.3  Check if `nana.lock.yml` integrity matches `package.json`'s
-        let dependencies = if lock.matches(&mut package)? {
+        if lock.matches(&package)? {
             // 3.4  Load and use `nana.lock.yml` dependencies map
-            lock.flat_dependencies()
+            lock.flat_dependencies();
         } else {
             // 4.   Calculate and load dependencies from `package.json`
             let deps = self.resolve_dependencies(&package).await?;
             lock.set_dependencies(&deps);
+        }
 
-            deps.iter()
-                .map(|(_, v)| v.clone())
-                .collect::<Vec<MetadataVersion>>()
-        };
-
-        dependencies.iter().for_each(|v| {
-            println!("> {}@{}", v.name, v.version);
-        });
+        self.state().shared.lock().await.progress.finish_and_clear();
+        println!("Resolving dependencies: {}", style("OK").green());
 
         // 5.   Load `node_modules`
         let node_modules = NodeModules::from_local_dir()?;
@@ -73,8 +70,11 @@ impl Install {
         // 5.1  Check if `node_modules` already contains required dependencies
         if !node_modules.matches(&lock) {
             // 6.   Download modules
-            node_modules.download(&lock).await?;
+            self.download(&lock).await?;
         }
+
+        self.state().shared.lock().await.progress.finish_and_clear();
+        println!("Downloading dependencies: {}", style("OK").green());
 
         lock.save_if_dirty()?;
 
@@ -85,28 +85,38 @@ impl Install {
         &mut self,
         package: &Package,
     ) -> NanaResult<Vec<(String, MetadataVersion)>> {
+        self.state()
+            .shared
+            .lock()
+            .await
+            .progress
+            .set_message("Resolving dependencies");
+
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<InstallCommand>();
 
         let handler_tx = tx.clone();
         let state = self.state();
         let handler = tokio::spawn(async move {
             while let Some(cmd) = rx.recv().await {
+                // println!("> {:?}", cmd);
                 let tx = handler_tx.clone();
                 match cmd {
                     InstallCommand::FetchPackage(name, version_range) => {
                         state
                             .shared
                             .lock()
-                            .unwrap()
+                            .await
                             .dependencies_in_progress
                             .insert(format!("{}@{}", name, version_range));
+
+                        state.shared.lock().await.progress.inc_length(1);
 
                         fetch_metadata(&name, &version_range, tx).await.unwrap();
                     }
                     InstallCommand::AddPackage(name, version_range, version) => {
                         let key = version.key();
                         if let std::collections::hash_map::Entry::Vacant(e) =
-                            state.shared.lock().unwrap().dependencies.entry(key)
+                            state.shared.lock().await.dependencies.entry(key)
                         {
                             e.insert(version.clone());
 
@@ -121,14 +131,16 @@ impl Install {
                         state
                             .shared
                             .lock()
-                            .unwrap()
+                            .await
                             .dependencies_in_progress
                             .remove(&format!("{}@{}", name, version_range));
+
+                        state.shared.lock().await.progress.inc(1);
 
                         if state
                             .shared
                             .lock()
-                            .unwrap()
+                            .await
                             .dependencies_in_progress
                             .is_empty()
                         {
@@ -139,7 +151,7 @@ impl Install {
                         if state
                             .shared
                             .lock()
-                            .unwrap()
+                            .await
                             .dependencies_in_progress
                             .is_empty()
                         {
@@ -159,7 +171,8 @@ impl Install {
         Ok(self
             .state()
             .shared
-            .lock()?
+            .lock()
+            .await
             .dependencies
             .iter()
             .map(|(k, v)| (k.clone(), v.clone()))
