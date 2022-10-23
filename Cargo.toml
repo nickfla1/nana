@@ -16,13 +16,11 @@ repository = "https://github.com/nickfla1/nana"
 name = "nana"
 
 [dependencies]
-async-recursion = "1.0.0"
 bytes = "1.2.1"
 clap = "4.0.15"
 console = "0.15.2"
 flate2 = "1.0.24"
 futures = "0.3.24"
-futures-util = "0.3.24"
 http-cache-reqwest = { version = "0.5.0", features = ["manager-cacache"] }
 indexmap = "1.9.1"
 indicatif = "0.17.1"

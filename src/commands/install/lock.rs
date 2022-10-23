@@ -60,7 +60,7 @@ impl Lock {
         self.save()
     }
 
-    pub fn matches(&self, package: &mut Package) -> NanaResult<bool> {
+    pub fn matches(&self, package: &Package) -> NanaResult<bool> {
         if (self.dependencies.is_none() && package.has_dependencies())
             || (self.dependencies.is_some() && !package.has_dependencies())
         {

@@ -9,15 +9,32 @@ use tar::Archive;
 
 use crate::{package::metadata::MetadataVersion, result::NanaResult};
 
-use super::{lock::Lock, modules::NodeModules};
+use super::{lock::Lock, Install};
 
-impl NodeModules {
+impl Install {
     pub async fn download(&self, lock: &Lock) -> NanaResult<()> {
-        let mut tasks = vec![];
+        self.state()
+            .shared
+            .lock()
+            .await
+            .progress
+            .set_message("Downloading dependencies");
+        self.state().shared.lock().await.progress.reset();
 
+        let mut tasks = vec![];
         let dependencies = lock.flat_dependencies();
+        self.state()
+            .shared
+            .lock()
+            .await
+            .progress
+            .set_length(dependencies.len() as u64);
+
         for meta_version in dependencies {
-            tasks.push(async move { download_dist(&meta_version).await });
+            tasks.push(async move {
+                download_dist(&meta_version).await.unwrap();
+                self.state().shared.lock().await.progress.inc(1);
+            });
         }
 
         futures::future::join_all(tasks).await;
@@ -27,8 +44,6 @@ impl NodeModules {
 }
 
 async fn download_dist(meta_version: &MetadataVersion) -> NanaResult<()> {
-    println!(">> {}", meta_version.name);
-
     let res = reqwest::get(&meta_version.dist.tarball).await?;
 
     let mut stream = res.bytes_stream();
