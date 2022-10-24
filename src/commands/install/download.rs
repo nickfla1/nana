@@ -14,26 +14,20 @@ use super::{lock::Lock, Install};
 impl Install {
     pub async fn download(&self, lock: &Lock) -> NanaResult<()> {
         self.state()
-            .shared
-            .lock()
-            .await
-            .progress
-            .set_message("Downloading dependencies");
-        self.state().shared.lock().await.progress.reset();
+            .progress_reset("Downloading dependencies")
+            .await;
 
         let mut tasks = vec![];
         let dependencies = lock.flat_dependencies();
+
         self.state()
-            .shared
-            .lock()
-            .await
-            .progress
-            .set_length(dependencies.len() as u64);
+            .progress_set_length(dependencies.len() as u64)
+            .await;
 
         for meta_version in dependencies {
             tasks.push(async move {
                 download_dist(&meta_version).await.unwrap();
-                self.state().shared.lock().await.progress.inc(1);
+                self.state().progress_increment(1).await;
             });
         }
 
