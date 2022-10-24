@@ -21,6 +21,7 @@ clap = "4.0.15"
 console = "0.15.2"
 flate2 = "1.0.24"
 futures = "0.3.24"
+git2 = "0.15.0"
 http-cache-reqwest = { version = "0.5.0", features = ["manager-cacache"] }
 indexmap = "1.9.1"
 indicatif = "0.17.1"
@@ -29,6 +30,7 @@ reqwest = { version = "0.11", features = ["json", "stream"] }
 reqwest-middleware = "0.1.6"
 semver_rs = { version = "0.2.0", features = ["serde"] }
 serde = { version = "1.0.145", features = ["rc"] }
+serde_json = "1.0.87"
 serde_yaml = "0.9.13"
 tar = "0.4.38"
 tokio = { version = "1.21.2", features = ["full"] }
