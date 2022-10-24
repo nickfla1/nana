@@ -61,7 +61,7 @@ impl Install {
             lock.set_dependencies(&deps);
         }
 
-        self.state().shared.lock().await.progress.finish_and_clear();
+        self.state().progress_finish().await;
         println!("Resolving dependencies: {}", style("OK").green());
 
         // 5.   Load `node_modules`
@@ -73,7 +73,7 @@ impl Install {
             self.download(&lock).await?;
         }
 
-        self.state().shared.lock().await.progress.finish_and_clear();
+        self.state().progress_finish().await;
         println!("Downloading dependencies: {}", style("OK").green());
 
         lock.save_if_dirty()?;
@@ -85,12 +85,7 @@ impl Install {
         &mut self,
         package: &Package,
     ) -> NanaResult<Vec<(String, MetadataVersion)>> {
-        self.state()
-            .shared
-            .lock()
-            .await
-            .progress
-            .set_message("Resolving dependencies");
+        self.state().progress_reset("Resolving dependencies").await;
 
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<InstallCommand>();
 
@@ -98,7 +93,6 @@ impl Install {
         let state = self.state();
         let handler = tokio::spawn(async move {
             while let Some(cmd) = rx.recv().await {
-                // println!("> {:?}", cmd);
                 let tx = handler_tx.clone();
                 match cmd {
                     InstallCommand::FetchPackage(name, version_range) => {
@@ -109,7 +103,7 @@ impl Install {
                             .dependencies_in_progress
                             .insert(format!("{}@{}", name, version_range));
 
-                        state.shared.lock().await.progress.inc_length(1);
+                        state.progress_increment_length(1).await;
 
                         fetch_metadata(&name, &version_range, tx).await.unwrap();
                     }
@@ -135,7 +129,7 @@ impl Install {
                             .dependencies_in_progress
                             .remove(&format!("{}@{}", name, version_range));
 
-                        state.shared.lock().await.progress.inc(1);
+                        state.progress_increment(1).await;
 
                         if state
                             .shared
