@@ -117,6 +117,18 @@ impl From<serde_yaml::Error> for NanaError {
     }
 }
 
+impl From<serde_json::Error> for NanaError {
+    fn from(e: serde_json::Error) -> Self {
+        Self::Runtime(e.to_string())
+    }
+}
+
+impl From<git2::Error> for NanaError {
+    fn from(e: git2::Error) -> Self {
+        Self::Runtime(e.to_string())
+    }
+}
+
 impl From<std::str::Utf8Error> for NanaError {
     fn from(e: std::str::Utf8Error) -> Self {
         Self::Runtime(e.to_string())

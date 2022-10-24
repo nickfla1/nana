@@ -1,8 +1,9 @@
+mod init;
 mod install;
 mod run;
 mod version;
 
-use clap::Command;
+use clap::{Arg, ArgAction, Command};
 use console::style;
 
 pub fn init() {
@@ -18,11 +19,25 @@ pub fn init() {
     // Install
     let cmd = cmd.subcommand(Command::new("install").about("Install project dependencies"));
 
+    // Init
+    let cmd = cmd.subcommand(
+        Command::new("init")
+            .about("Initialize a new nana project")
+            .arg(
+                Arg::new("name")
+                    .short('n')
+                    .long("name")
+                    .action(ArgAction::Set)
+                    .help("Package name"),
+            ),
+    );
+
     let matches = cmd.get_matches();
 
     let result = match matches.subcommand() {
         Some(("version", _)) => version::exec(),
         Some(("install", arg_matches)) => install::exec(arg_matches),
+        Some(("init", arg_matches)) => init::exec(arg_matches),
         Some((ext, arg_matches)) => run::exec(ext, arg_matches),
         _ => unreachable!(),
     };
