@@ -11,20 +11,32 @@ Fast and customizable Node.js package manager written in Rust!
 
 ## Usage
 
-#### Print Nana's version
+#### `version`
+Prints installed nana version.
 ```sh
 nana version
+# Outputs: `nana - v1.0.0`
 ```
 
-#### Install dependencies in the current directly
+#### `init`
+Initializes a `package.json`.
+```sh
+# Default configuration
+nana init
+
+# Package name defaults to directory name, change it using `--name` or `-n`
+name --name package-name
+```
+
+#### `install`
+Installs the dependencies specified in the `package.json`
 ```sh
 nana install
 ```
 
-#### Run custom script from `package.json`
-```sh
-nana <script-name>
-```
+### Running cutsom scripts
+
+TBD.
 
 ## Contributing
 
